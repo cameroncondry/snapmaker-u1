@@ -5,6 +5,7 @@
 This project provides a bridge between **Klipper** and **Spoolman**, allowing for automatic spool tracking, persistent selection across reboots, and multi-tool support (T0–T3) for the Snapmaker U1.
 
 ## Technical Highlights
+* **Fluidd.cfg Integration**: Remove the excess T4-T31 in the default interface.
 * **Persistent Spool Memory**: Leverages Klipper's `[save_variables]` to remember which spool is loaded on which tool, even after a power cycle.
 * **Multi-Tool Synchronization**: Custom macros for `T0`, `T1`, `T2`, and `T3` automatically update the active spool in Spoolman when a tool change occurs.
 * **Automated State Restoration**: Includes a delayed initialization sequence (`RESTORE_SELECTED_SPOOLS`) to ensure the printer state matches the physical reality upon startup.
