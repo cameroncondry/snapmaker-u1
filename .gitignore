@@ -1,0 +1,10 @@
+
+# Spoolman runtime/database files
+spoolman/data/
+
+# macOS
+.DS_Store
+
+# Local/private values
+.env
+*.local
