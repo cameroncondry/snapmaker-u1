@@ -2,7 +2,7 @@
 *A streamlined Klipper integration for Spoolman, designed for efficiency and filament tracking.*
 
 ## Why use this?
-This project provides a robust bridge between **Klipper** and **Spoolman**, allowing for automatic spool tracking, persistent selection across reboots, and multi-tool support (T0–T3) for the Snapmaker U1.
+This project provides a bridge between **Klipper** and **Spoolman**, allowing for automatic spool tracking, persistent selection across reboots, and multi-tool support (T0–T3) for the Snapmaker U1.
 
 ## Technical Highlights
 * **Persistent Spool Memory**: Leverages Klipper's `[save_variables]` to remember which spool is loaded on which tool, even after a power cycle.
