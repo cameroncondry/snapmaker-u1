@@ -40,5 +40,8 @@ The included Docker configuration handles the backend.
 * **[unlucio/U1-klipper-configs](https://github.com/unlucio/U1-klipper-configs)**: The original inspiration and source for the multi-tool configuration logic.
 * **[Spoolman](https://github.com/Donkie/Spoolman)**: The backend filament tracking system.
 
+## Interested in the next stage?
+* **[Bespok3d](https://bespok3d.app/)**
+
 ---
 *Note: This configuration was developed for a Snapmaker U1 multi-tool setup but can be adapted for any Klipper-based toolchanger or IDEX machine.*
