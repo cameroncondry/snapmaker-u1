@@ -11,3 +11,4 @@ services:
       - "7912:8000"
     environment:
       - TZ=America/Indiana/Indianapolis
+      - SPOOLMAN_CORS_ORIGIN=*

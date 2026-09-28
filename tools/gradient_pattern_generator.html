@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Generate two-color gradient pattern strings for Orca Full Spectrum slicer.">
+  <title>Gradient Pattern Generator</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, sans-serif;
+      line-height: 1.5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      max-width: 48rem;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    h1 { margin: 0 0 1rem; font-size: 1.5rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .field { display: grid; gap: 0.35rem; }
+    .label, .stat { font-size: 0.8rem; color: GrayText; }
+
+    input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 0.45rem 0.55rem;
+      font: inherit;
+    }
+
+    .color-row, .range-row, .pattern-heading, .stats {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .color-name { flex: 1; }
+
+    input[type="color"] {
+      width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
+      border: 1px solid ButtonBorder;
+      border-radius: 0.35rem;
+      cursor: pointer;
+    }
+
+    input[type="range"] { flex: 1; }
+    .range-value { min-width: 3rem; text-align: right; }
+
+    #preview {
+      display: block;
+      width: 100%;
+      height: 2.25rem;
+      margin-bottom: 1rem;
+      border: 1px solid ButtonBorder;
+      border-radius: 0.35rem;
+    }
+
+    .pattern-heading { justify-content: space-between; margin-bottom: 0.4rem; }
+
+    button {
+      padding: 0.35rem 0.75rem;
+      border: 1px solid ButtonBorder;
+      border-radius: 0.35rem;
+      cursor: pointer;
+    }
+
+    #patternBox {
+      display: block;
+      min-height: 3rem;
+      max-height: 9rem;
+      overflow-y: auto;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid ButtonBorder;
+      border-radius: 0.35rem;
+      background: Canvas;
+      font-family: ui-monospace, monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+      user-select: all;
+    }
+
+    .stats { flex-wrap: wrap; margin-top: 0.5rem; gap: 1rem; }
+    .stat strong { color: CanvasText; font-weight: 600; }
+
+    @media (max-width: 36rem) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Gradient Pattern Generator</h1>
+    <canvas id="preview" width="600" height="36" aria-label="Color gradient preview"></canvas>
+
+    <section class="grid" aria-label="Gradient endpoints">
+      <div class="field">
+        <label for="colorA">Color A — start</label>
+        <div class="color-row">
+          <input type="color" id="colorA" value="#ffffff">
+          <input class="color-name" type="text" id="nameA" value="White" aria-label="Color A name">
+        </div>
+        <div class="range-row">
+          <input type="range" id="startPct" min="0" max="100" value="100" aria-label="Color A percentage at first layer">
+          <output class="range-value" id="startPctV" for="startPct">100%</output>
+        </div>
+        <span class="label">Color A at first layer</span>
+      </div>
+
+      <div class="field">
+        <label for="colorB">Color B — end</label>
+        <div class="color-row">
+          <input type="color" id="colorB" value="#ff0000">
+          <input class="color-name" type="text" id="nameB" value="Red" aria-label="Color B name">
+        </div>
+        <div class="range-row">
+          <input type="range" id="endPct" min="0" max="100" value="100" aria-label="Color B percentage at last layer">
+          <output class="range-value" id="endPctV" for="endPct">100%</output>
+        </div>
+        <span class="label">Color B at last layer</span>
+      </div>
+    </section>
+
+    <section class="grid" aria-label="Pattern settings">
+      <label class="field" for="layers">
+        <span>Layers</span>
+        <input type="number" id="layers" value="100" min="2" max="2000">
+      </label>
+      <label class="field" for="layerH">
+        <span>Layer height (mm)</span>
+        <input type="number" id="layerH" value="0.08" min="0.01" step="0.01">
+      </label>
+      <label class="field" for="extA">
+        <span>Extruder # for A</span>
+        <input type="number" id="extA" value="1" min="1" max="9">
+      </label>
+      <label class="field" for="extB">
+        <span>Extruder # for B</span>
+        <input type="number" id="extB" value="3" min="1" max="9">
+      </label>
+    </section>
+
+    <div class="pattern-heading">
+      <span class="label">Pattern string</span>
+      <button type="button" id="copyBtn">Copy</button>
+    </div>
+    <output id="patternBox" aria-live="polite"></output>
+
+    <div class="stats">
+      <span class="stat">Layers <strong id="sL">—</strong></span>
+      <span class="stat">Height <strong id="sH">—</strong> mm</span>
+      <span class="stat">String length <strong id="sLen">—</strong></span>
+    </div>
+  </main>
+
+  <script>
+    "use strict";
+
+    const byId = (id) => document.getElementById(id);
+    const lerp = (a, b, amount) => a + (b - a) * amount;
+    const hexToRgb = (hex) => [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16));
+
+    function generate() {
+      const startPct = Number(byId("startPct").value);
+      const endPct = Number(byId("endPct").value);
+      const colorA = byId("colorA").value;
+      const colorB = byId("colorB").value;
+      const layers = Math.max(2, Math.min(2000, Number(byId("layers").value) || 100));
+      const layerHeight = Number(byId("layerH").value) || 0.08;
+      const extruderA = byId("extA").value || "1";
+      const extruderB = byId("extB").value || "3";
+      const startRatioB = 1 - startPct / 100;
+      const endRatioB = endPct / 100;
+
+      byId("startPctV").value = `${startPct}%`;
+      byId("endPctV").value = `${endPct}%`;
+
+      let pattern = "";
+      let error = 0;
+
+      for (let layer = 0; layer < layers; layer += 1) {
+        const progress = layer / (layers - 1);
+        const target = lerp(startRatioB, endRatioB, progress) + error;
+
+        if (target >= 0.5) {
+          pattern += extruderB;
+          error = target - 1;
+        } else {
+          pattern += extruderA;
+          error = target;
+        }
+      }
+
+      byId("patternBox").textContent = pattern;
+      byId("sL").textContent = layers;
+      byId("sH").textContent = (layers * layerHeight).toFixed(2);
+      byId("sLen").textContent = pattern.length;
+
+      drawPreview(colorA, colorB, startRatioB, endRatioB);
+    }
+
+    function drawPreview(colorA, colorB, startRatioB, endRatioB) {
+      const canvas = byId("preview");
+      const width = canvas.clientWidth || 600;
+      const height = 36;
+      const context = canvas.getContext("2d");
+      const rgbA = hexToRgb(colorA);
+      const rgbB = hexToRgb(colorB);
+
+      canvas.width = width;
+      canvas.height = height;
+
+      for (let x = 0; x < width; x += 1) {
+        const ratioB = lerp(startRatioB, endRatioB, x / Math.max(1, width - 1));
+        const color = rgbA.map((channel, index) => Math.round(lerp(channel, rgbB[index], ratioB)));
+        context.fillStyle = `rgb(${color.join(",")})`;
+        context.fillRect(x, 0, 1, height);
+      }
+    }
+
+    async function copyPattern() {
+      const button = byId("copyBtn");
+      const text = byId("patternBox").textContent;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = "Copied!";
+      } catch {
+        button.textContent = "Select and copy";
+      }
+
+      window.setTimeout(() => { button.textContent = "Copy"; }, 1500);
+    }
+
+    ["colorA", "colorB", "startPct", "endPct", "layers", "layerH", "extA", "extB"]
+      .forEach((id) => byId(id).addEventListener("input", generate));
+
+    byId("copyBtn").addEventListener("click", copyPattern);
+    window.addEventListener("resize", generate);
+    generate();
+  </script>
+</body>
+</html>
